@@ -361,6 +361,9 @@ Bool microblazeTLBMiss(
 #endif
                 // update simulated TLB state
                 entry->simPriv[mode] = priv;
+		//TLB entry exists - so raise an interrupt
+		//This is new model code
+		microblazeProcessInterrupt((vmiProcessorP) microblaze);
 
                 return False;
                 break;
