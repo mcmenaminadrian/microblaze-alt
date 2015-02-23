@@ -262,6 +262,7 @@ VMI_RD_PRIV_EXCEPT_FN(microblazeRdPrivExcept) {
 
     if(!microblazeTLBMiss(microblaze, TLBA_LOAD, faultAddr, attrs)) {
         *action = VMI_LOAD_STORE_CONTINUE;
+	vmirtSetICountInterrupt((vmiProcessorP) microblaze, 0);
     }
 }
 
@@ -274,6 +275,7 @@ VMI_WR_PRIV_EXCEPT_FN(microblazeWrPrivExcept) {
 
     if(!microblazeTLBMiss(microblaze, TLBA_STORE, faultAddr, attrs)) {
         *action = VMI_LOAD_STORE_CONTINUE;
+	vmirtSetICountInterrupt((vmiProcessorP) microblaze, 0);
     }
 }
 
@@ -660,7 +662,7 @@ static Bool validateFetchAddress(microblazeP microblaze, Uns32 simPC, Bool compl
     memAccessAttrs attrs = complete ? MEM_AA_TRUE : MEM_AA_FALSE;
 
     if(vmirtIsExecutable((vmiProcessorP)microblaze, simPC)) {
-
+	vmirtSetICountInterrupt((vmiProcessorP) microblaze, 0);
         // no exception pending
         return True;
 
@@ -671,7 +673,8 @@ static Bool validateFetchAddress(microblazeP microblaze, Uns32 simPC, Bool compl
         return False;
 
     } else {
-
+	//try handling here
+	vmirtSetICountInterrupt((vmiProcessorP) microblaze, 0);
         // no exception pending
         return True;
     }
@@ -727,6 +730,8 @@ VMI_IFETCH_FN(microblazeIfetchExcept) {
 }
 
 VMI_ICOUNT_FN(microblazeIcountExcept) {
+	//Try in here!
+	microblazeProcessInterrupt((vmiProcessorP) processor);
 }
 
 //
