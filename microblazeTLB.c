@@ -363,8 +363,7 @@ Bool microblazeTLBMiss(
                 entry->simPriv[mode] = priv;
 		//TLB entry exists - so raise an interrupt
 		//This is new model code
-	//	vmirtSetICountInterrupt((vmiProcessorP) microblaze, 0);
-//		microblazeProcessInterrupt((vmiProcessorP) microblaze);
+		vmirtSetICountInterrupt((vmiProcessorP) microblaze, 0);
 
                 return False;
                 break;
