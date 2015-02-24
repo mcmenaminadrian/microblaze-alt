@@ -290,6 +290,14 @@ static memPriv accessPriv(microblazeP microblaze, TLBentryP entry, microblazeTLB
     return accessOK ? priv : MEM_PRIV_NONE;
 }
 
+static VMI_MEM_WATCH_FN(testRead) {
+	if (!processor) {
+		vmiPrintf("Dummy read\n");
+	} else {
+		vmirtSetICountInterrupt(processor, 0);
+	}
+}
+
 //
 // Determine if the access using the passed virtual address misses the TLB,
 // updating the processor state to take an appropriate exception if so.
@@ -355,16 +363,16 @@ Bool microblazeTLBMiss(
                     TID
                 );
 
-#if defined(DEBUG_TLB)
+//#if defined(DEBUG_TLB)
                 vmiMessage("I", "TLB_MAP", "%u VAL=%08x VAH=%08x PA=%08x TID=%u PRIV=%u",
                         mode, lowVA, lowVA+size-1, lowPA, TID, priv);
-#endif
+//#endif
                 // update simulated TLB state
                 entry->simPriv[mode] = priv;
-		//TLB entry exists - so raise an interrupt
 		//This is new model code
-		vmirtSetICountInterrupt((vmiProcessorP) microblaze, 0);
-
+		vmirtAddWriteCallback(microblaze->pDomain,
+			(vmiProcessorP) microblaze, lowPA, highPA,
+			testRead, "HOW DO");
                 return False;
                 break;
 
