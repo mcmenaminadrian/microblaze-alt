@@ -294,7 +294,9 @@ static VMI_MEM_WATCH_FN(testRead) {
 	if (!processor) {
 		vmiPrintf("Dummy read\n");
 	} else {
-		vmirtSetICountInterrupt(processor, 0);
+		if (((microblazeP)processor)->SPR_MSR.bits.EIP == 0) {
+			vmirtSetICountInterrupt(processor, 0);
+		}
 	}
 }
 
@@ -370,7 +372,7 @@ Bool microblazeTLBMiss(
                 // update simulated TLB state
                 entry->simPriv[mode] = priv;
 		//This is new model code
-		vmirtAddWriteCallback(microblaze->pDomain,
+		vmirtAddReadCallback(microblaze->pDomain,
 			(vmiProcessorP) microblaze, lowPA, highPA,
 			testRead, "HOW DO");
                 return False;
