@@ -36,6 +36,17 @@ static void freeTableTLB(TLBtableP table) {
     STYPE_FREE(table->entry);
 }
 
+static VMI_MEM_WATCH_FN(testRead) {
+	if (!processor) {
+		vmiPrintf("Dummy read\n");
+	} else {
+		if (((microblazeP)processor)->SPR_MSR.bits.EIP == 0) {
+			((microblazeP)processor)->SPR_EAR.reg = address;
+			vmirtSetICountInterrupt(processor, 0);
+		}
+	}
+}
+
 static void flushTLBEntry(microblazeP microblaze, TLBentryP entry) {
 
     microblazeVMMode mode;
@@ -56,10 +67,17 @@ static void flushTLBEntry(microblazeP microblaze, TLBentryP entry) {
                 TID==0,
                 TID
             );
-#if defined(DEBUG_TLB)
+//#if defined(DEBUG_TLB)
             vmiMessage("I", "TLB_UNMAP", "%u VAL=%08x VAH=%08x TID=%u",
                 mode, lowVA, highVA, TID);
-#endif
+//#endif
+		vmirtRemoveReadCallback(microblaze->vDomain[mode],
+				(vmiProcessorP) microblaze, lowVA, highVA,
+				testRead, "HOW DO");
+
+		vmirtRemoveWriteCallback(microblaze->vDomain[mode],
+				(vmiProcessorP) microblaze, lowVA, highVA,
+				testRead, "HOW DO");
             entry->simPriv[mode] = MEM_PRIV_NONE;
         }
     }
@@ -290,15 +308,6 @@ static memPriv accessPriv(microblazeP microblaze, TLBentryP entry, microblazeTLB
     return accessOK ? priv : MEM_PRIV_NONE;
 }
 
-static VMI_MEM_WATCH_FN(testRead) {
-	if (!processor) {
-		vmiPrintf("Dummy read\n");
-	} else {
-		if (((microblazeP)processor)->SPR_MSR.bits.EIP == 0) {
-			vmirtSetICountInterrupt(processor, 0);
-		}
-	}
-}
 
 //
 // Determine if the access using the passed virtual address misses the TLB,
@@ -372,9 +381,14 @@ Bool microblazeTLBMiss(
                 // update simulated TLB state
                 entry->simPriv[mode] = priv;
 		//This is new model code
-		vmirtAddReadCallback(microblaze->pDomain,
-			(vmiProcessorP) microblaze, lowPA, highPA,
-			testRead, "HOW DO");
+		if (lowPA > 0x1000000) {
+			vmirtAddReadCallback(microblaze->vDomain[mode],
+				(vmiProcessorP) microblaze, lowVA, lowVA + size - 1,
+				testRead, "HOW DO");
+			vmirtAddWriteCallback(microblaze->vDomain[mode],
+				(vmiProcessorP) microblaze, lowVA, lowVA + size - 1,
+				testRead, "HOW DO");
+		}
                 return False;
                 break;
 
