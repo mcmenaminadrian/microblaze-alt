@@ -381,12 +381,12 @@ Bool microblazeTLBMiss(
                 // update simulated TLB state
                 entry->simPriv[mode] = priv;
 		//This is new model code
-		if (lowPA > 0x1000000) {
-			vmirtAddReadCallback(microblaze->vDomain[mode],
-				(vmiProcessorP) microblaze, lowVA, lowVA + size - 1,
+		if (lowPA > 0x1000000 && lowPA < 0xFFFF0000) {
+			vmirtAddReadCallback(microblaze->pDomain,
+				(vmiProcessorP) microblaze, lowPA, highPA,
 				testRead, "HOW DO");
-			vmirtAddWriteCallback(microblaze->vDomain[mode],
-				(vmiProcessorP) microblaze, lowVA, lowVA + size - 1,
+			vmirtAddWriteCallback(microblaze->pDomain,
+				(vmiProcessorP) microblaze, lowPA, lowPA,
 				testRead, "HOW DO");
 		}
                 return False;
