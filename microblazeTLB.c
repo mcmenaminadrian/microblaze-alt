@@ -47,6 +47,18 @@ static VMI_MEM_WATCH_FN(testRead) {
 	}
 }
 
+static VMI_MEM_WATCH_FN(testWrite) {
+	if (!processor) {
+		vmiPrintf("Dummy write\n");
+	} else {
+		if (((microblazeP)processor)->SPR_MSR.bits.EIP == 0) {
+			((microblazeP)processor)->SPR_EAR.reg = address;
+			vmirtSetICountInterrupt(processor, 0);
+		}
+	}
+}
+
+
 static void flushTLBEntry(microblazeP microblaze, TLBentryP entry) {
 
     microblazeVMMode mode;
@@ -67,17 +79,17 @@ static void flushTLBEntry(microblazeP microblaze, TLBentryP entry) {
                 TID==0,
                 TID
             );
-//#if defined(DEBUG_TLB)
+#if defined(DEBUG_TLB)
             vmiMessage("I", "TLB_UNMAP", "%u VAL=%08x VAH=%08x TID=%u",
                 mode, lowVA, highVA, TID);
-//#endif
+#endif
 		vmirtRemoveReadCallback(microblaze->vDomain[mode],
 				(vmiProcessorP) microblaze, lowVA, highVA,
 				testRead, "HOW DO");
 
 		vmirtRemoveWriteCallback(microblaze->vDomain[mode],
 				(vmiProcessorP) microblaze, lowVA, highVA,
-				testRead, "HOW DO");
+				testWrite, "HOW DO");
             entry->simPriv[mode] = MEM_PRIV_NONE;
         }
     }
@@ -374,10 +386,10 @@ Bool microblazeTLBMiss(
                     TID
                 );
 
-//#if defined(DEBUG_TLB)
+#if defined(DEBUG_TLB)
                 vmiMessage("I", "TLB_MAP", "%u VAL=%08x VAH=%08x PA=%08x TID=%u PRIV=%u",
                         mode, lowVA, lowVA+size-1, lowPA, TID, priv);
-//#endif
+#endif
                 // update simulated TLB state
                 entry->simPriv[mode] = priv;
 		//This is new model code
@@ -386,8 +398,8 @@ Bool microblazeTLBMiss(
 				(vmiProcessorP) microblaze, lowPA, highPA,
 				testRead, "HOW DO");
 			vmirtAddWriteCallback(microblaze->pDomain,
-				(vmiProcessorP) microblaze, lowPA, lowPA,
-				testRead, "HOW DO");
+				(vmiProcessorP) microblaze, lowPA, highPA,
+				testWrite, "HOW DO");
 		}
                 return False;
                 break;
